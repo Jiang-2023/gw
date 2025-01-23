@@ -97,6 +97,11 @@ header profinetRT_t {
     bit<8>  telegramNumber;
 }
 
+struct learn_t {
+    bit<48> srcAddr;
+    bit<9>  ingress_port;
+}
+
 struct metadata {
     bit<1> is_modbus;    // 是否为Modbus TCP数据包的标记
     bit<1> is_profinet;  // 是否为Profinet数据包的标记

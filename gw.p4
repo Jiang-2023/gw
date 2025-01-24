@@ -98,13 +98,16 @@ header profinetRT_t {
 }
 
 struct learn_t {
+
     bit<48> srcAddr;
     bit<9>  ingress_port;
+
 }
 
 struct metadata {
     bit<1> is_modbus;    // 是否为Modbus TCP数据包的标记
     bit<1> is_profinet;  // 是否为Profinet数据包的标记
+    @field_list(0)
     learn_t learn;
 }
 
@@ -208,9 +211,17 @@ control MyIngress(inout headers hdr,
         mark_to_drop(standard_metadata);
     }
 
+    // 普通转发动作
+    action forward(egressSpec_t port) {
+        standard_metadata.egress_spec = port;
+    }
+
+
      action mac_learn() {
-        meta.ingress_port = standard_metadata.ingress_port;
+        meta.learn.srcAddr = hdr.ethernet.srcAddr;
+        meta.learn.ingress_port = standard_metadata.ingress_port;
         clone_preserving_field_list(CloneType.I2E, 100, 0);
+        digest<learn_t>(1, meta.learn);
     }
 
     table smac {
@@ -263,10 +274,6 @@ control MyIngress(inout headers hdr,
         hdr.ethernet.dstAddr = dstAddr;
         standard_metadata.egress_spec = port;
         hdr.ipv4.ttl = hdr.ipv4.ttl - 1;
-    }
-    // 普通转发动作
-    action forward(egressSpec_t port) {
-        standard_metadata.egress_spec = port;
     }
 
     // IPv4 长度匹配表
